@@ -8,6 +8,8 @@ contract Manager is AccessControl {
     uint256 public period;
     uint256 public periodicMaxCap;
 
+    mapping(uint256 => uint256) public totalWithdrawals; // period => amount
+
     bytes32 public constant UNITAP_ROLE = keccak256("UNITAP_ROLE");
 
     constructor(
@@ -26,6 +28,10 @@ contract Manager is AccessControl {
         _setupRole(UNITAP_ROLE, unitap);
     }
 
+    function getActivePeriod() public view returns (uint256) {
+        return (block.timestamp / period) * period;
+    }
+
     function setParams(uint256 period_, uint256 periodicMaxCap_)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
@@ -33,4 +39,18 @@ contract Manager is AccessControl {
         period = period_;
         periodicMaxCap = periodicMaxCap_;
     }
+
+    function withdraw(uint256 amount, address to)
+        external
+        onlyRole(UNITAP_ROLE)
+    {
+        require(
+            totalWithdrawals[getActivePeriod()] + amount <= periodicMaxCap,
+            "Manager: PERIODIC_MAX_CAP_EXCEEDED"
+        );
+        totalWithdrawals[getActivePeriod()] += amount;
+        payable(to).transfer(amount);
+    }
+
+    receive() external payable {}
 }
