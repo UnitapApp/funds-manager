@@ -32,14 +32,6 @@ contract Manager is AccessControl {
         return (block.timestamp / period) * period;
     }
 
-    function setParams(uint256 period_, uint256 periodicMaxCap_)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        period = period_;
-        periodicMaxCap = periodicMaxCap_;
-    }
-
     function withdraw(uint256 amount, address to)
         external
         onlyRole(UNITAP_ROLE)
@@ -50,6 +42,14 @@ contract Manager is AccessControl {
         );
         totalWithdrawals[getActivePeriod()] += amount;
         payable(to).transfer(amount);
+    }
+
+    function setParams(uint256 period_, uint256 periodicMaxCap_)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        period = period_;
+        periodicMaxCap = periodicMaxCap_;
     }
 
     receive() external payable {}
