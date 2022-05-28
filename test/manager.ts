@@ -4,6 +4,7 @@ import { BigNumber } from "ethers";
 import { ethers } from "hardhat";
 import { deployManager } from "../scripts/deployHelpers";
 import { Manager } from "../typechain";
+import { increaseTime } from "./timeUtils";
 
 let week = 86400 * 7;
 let tenTokens = ethers.utils.parseEther("10");
@@ -70,5 +71,9 @@ describe("Manager", async () => {
     await expect(withdraw).to.be.revertedWith(
       "Manager: PERIODIC_MAX_CAP_EXCEEDED"
     );
+  });
+  it("should allow unitap to withdraw funds in the next period", async () => {
+    await increaseTime(period.toNumber());
+    await manager.connect(unitap).withdraw(periodicMaxCap, user.address);
   });
 });
