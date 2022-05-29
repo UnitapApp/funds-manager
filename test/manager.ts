@@ -16,9 +16,10 @@ describe("Manager", async () => {
   let admin: SignerWithAddress;
   let unitap: SignerWithAddress;
   let user: SignerWithAddress;
+  let emergencyUser: SignerWithAddress;
 
   before(async () => {
-    [admin, unitap, user] = await ethers.getSigners();
+    [admin, unitap, user, emergencyUser] = await ethers.getSigners();
     manager = await deployManager(
       BigNumber.from(86400), // one day
       ethers.utils.parseEther("1"), // one token;
@@ -75,5 +76,21 @@ describe("Manager", async () => {
   it("should allow unitap to withdraw funds in the next period", async () => {
     await increaseTime(period.toNumber());
     await manager.connect(unitap).withdraw(periodicMaxCap, user.address);
+  });
+  it("it should not allow non-admin role to emergency withdraw", async () => {
+    let withdraw = manager
+      .connect(user)
+      .emergencyWithdraw(ethers.utils.parseEther("5"), emergencyUser.address);
+
+    await expect(withdraw).to.be.reverted;
+  });
+  it("should withdraw funds if admin role", async () => {
+    let beforeBalance = await emergencyUser.getBalance();
+    let amount = ethers.utils.parseEther("5");
+    await manager
+      .connect(admin)
+      .emergencyWithdraw(amount, emergencyUser.address);
+    let afterBalance = await emergencyUser.getBalance();
+    expect(afterBalance.sub(beforeBalance)).eq(amount);
   });
 });

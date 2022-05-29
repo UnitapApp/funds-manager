@@ -52,5 +52,12 @@ contract Manager is AccessControl {
         periodicMaxCap = periodicMaxCap_;
     }
 
+    function emergencyWithdraw(uint256 amount, address to)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        payable(to).transfer(amount);
+    }
+
     receive() external payable {}
 }
