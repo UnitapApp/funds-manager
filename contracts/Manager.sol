@@ -74,5 +74,14 @@ contract Manager is AccessControl {
         periodicMaxCap = periodicMaxCap_;
     }
 
+    function setErc20Params(
+        address token,
+        uint256 period_,
+        uint256 periodicMaxCap_
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        erc20Periods[token] = period_;
+        erc20PeriodicMaxCap[token] = periodicMaxCap_;
+    }
+
     receive() external payable {}
 }

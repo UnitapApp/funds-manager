@@ -8,12 +8,18 @@ import { increaseTime } from "./timeUtils";
 
 let week = 86400 * 7;
 let tenTokens = ethers.utils.parseEther("10");
+let fiveTokens = ethers.utils.parseEther("5");
 
 describe("Manager", async () => {
   let manager: Manager;
   let token: ERC20;
+
   let period: BigNumber = BigNumber.from(week);
   let periodicMaxCap: BigNumber = tenTokens;
+
+  let tokenPeriod: BigNumber = BigNumber.from(week);
+  let tokenPeriodicMaxCap: BigNumber = fiveTokens;
+
   let admin: SignerWithAddress;
   let unitap: SignerWithAddress;
   let user: SignerWithAddress;
@@ -85,7 +91,7 @@ describe("Manager", async () => {
   it("it should not allow non-admin role to emergency withdraw", async () => {
     let withdraw = manager
       .connect(user)
-      .withdraw(ethers.utils.parseEther("5"), emergencyUser.address);
+      .withdraw(fiveTokens, emergencyUser.address);
 
     await expect(withdraw).to.be.reverted;
   });
@@ -105,12 +111,27 @@ describe("Manager", async () => {
     expect(tokenPeriodicMaxCap).eq(0);
   });
   it("should not allow non-unitap user to withdraw", async () => {
-    let withdraw = manager.withdrawErc20(
-      token.address,
-      BigNumber.from(100),
-      user.address
-    );
+    let withdraw = manager
+      .connect(user)
+      .withdrawErc20(token.address, BigNumber.from(100), user.address);
     await expect(withdraw).to.be.reverted;
   });
-  it("should not allow unitap to withdraw more");
+  it("should not allow non-admin user to set erc20 params", async () => {
+    let setParams = manager
+      .connect(user)
+      .setErc20Params(token.address, tokenPeriod, tokenPeriodicMaxCap);
+    await expect(setParams).to.be.reverted;
+  });
+  it("should allow admin to set erc20 params", async () => {
+    await manager.setErc20Params(
+      token.address,
+      tokenPeriod,
+      tokenPeriodicMaxCap
+    );
+    let tokenPeriod_ = await manager.erc20Periods(token.address);
+    let tokenPeriodicMaxCap_ = await manager.erc20PeriodicMaxCap(token.address);
+
+    expect(tokenPeriod).eq(tokenPeriod_);
+    expect(tokenPeriodicMaxCap).eq(tokenPeriodicMaxCap_);
+  });
 });
