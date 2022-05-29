@@ -85,19 +85,14 @@ describe("Manager", async () => {
   it("it should not allow non-admin role to emergency withdraw", async () => {
     let withdraw = manager
       .connect(user)
-      .emergencyWithdrawETH(
-        ethers.utils.parseEther("5"),
-        emergencyUser.address
-      );
+      .withdraw(ethers.utils.parseEther("5"), emergencyUser.address);
 
     await expect(withdraw).to.be.reverted;
   });
   it("should withdraw funds if admin role", async () => {
     let beforeBalance = await emergencyUser.getBalance();
     let amount = ethers.utils.parseEther("5");
-    await manager
-      .connect(admin)
-      .emergencyWithdrawETH(amount, emergencyUser.address);
+    await manager.connect(admin).withdraw(amount, emergencyUser.address);
     let afterBalance = await emergencyUser.getBalance();
     expect(afterBalance.sub(beforeBalance)).eq(amount);
   });
@@ -109,4 +104,13 @@ describe("Manager", async () => {
     expect(tokenWithrdrawals).eq(0);
     expect(tokenPeriodicMaxCap).eq(0);
   });
+  it("should not allow non-unitap user to withdraw", async () => {
+    let withdraw = manager.withdrawErc20(
+      token.address,
+      BigNumber.from(100),
+      user.address
+    );
+    await expect(withdraw).to.be.reverted;
+  });
+  it("should not allow unitap to withdraw more");
 });

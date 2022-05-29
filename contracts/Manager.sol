@@ -31,21 +31,40 @@ contract Manager is AccessControl {
         _setupRole(UNITAP_ROLE, unitap);
     }
 
+    modifier onlyUnitapOrAdmin() {
+        require(
+            hasRole(UNITAP_ROLE, msg.sender) ||
+                hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
+            "Manager: UNAUTHORIZED"
+        );
+        _;
+    }
+
     function getActivePeriod() public view returns (uint256) {
         return (block.timestamp / period) * period;
     }
 
-    function withdraw(uint256 amount, address to)
-        external
-        onlyRole(UNITAP_ROLE)
-    {
-        require(
-            totalWithdrawals[getActivePeriod()] + amount <= periodicMaxCap,
-            "Manager: PERIODIC_MAX_CAP_EXCEEDED"
-        );
-        totalWithdrawals[getActivePeriod()] += amount;
+    function _checkAndUpdateMaxCap(uint256 amount) internal {
+        if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+            require(
+                totalWithdrawals[getActivePeriod()] + amount <= periodicMaxCap,
+                "Manager: PERIODIC_MAX_CAP_EXCEEDED"
+            );
+            totalWithdrawals[getActivePeriod()] += amount;
+        }
+    }
+
+    function withdraw(uint256 amount, address to) external onlyUnitapOrAdmin {
+        // allow DEFALUT_ADMIN to withdraw as much as he wants
+        _checkAndUpdateMaxCap(amount);
         payable(to).transfer(amount);
     }
+
+    function withdrawErc20(
+        address token,
+        uint256 amount,
+        address to
+    ) external onlyRole(UNITAP_ROLE) {}
 
     function setParams(uint256 period_, uint256 periodicMaxCap_)
         external
@@ -53,13 +72,6 @@ contract Manager is AccessControl {
     {
         period = period_;
         periodicMaxCap = periodicMaxCap_;
-    }
-
-    function emergencyWithdrawETH(uint256 amount, address to)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        payable(to).transfer(amount);
     }
 
     receive() external payable {}
