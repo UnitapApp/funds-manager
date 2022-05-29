@@ -43,6 +43,9 @@ describe("Manager", async () => {
     let tokenFactory = await ethers.getContractFactory("TestToken");
     token = await tokenFactory.deploy();
     await token.deployed();
+
+    // send some tokens to contract
+    await token.transfer(manager.address, ethers.utils.parseEther("100"));
   });
   it("initial params should be correct", async () => {
     let period_ = await manager.period();
@@ -105,9 +108,7 @@ describe("Manager", async () => {
   it("should get erc20 period and max periodic cap", async () => {
     let tokenPeriod = await manager.erc20Periods(token.address);
     let tokenPeriodicMaxCap = await manager.erc20PeriodicMaxCap(token.address);
-    let tokenWithrdrawals = await manager.erc20Withdrawals(token.address);
     expect(tokenPeriod).eq(0);
-    expect(tokenWithrdrawals).eq(0);
     expect(tokenPeriodicMaxCap).eq(0);
   });
   it("should not allow non-unitap user to withdraw", async () => {
@@ -133,5 +134,53 @@ describe("Manager", async () => {
 
     expect(tokenPeriod).eq(tokenPeriod_);
     expect(tokenPeriodicMaxCap).eq(tokenPeriodicMaxCap_);
+  });
+  it("should not allow unitap role to withdraw more than max cap in each period", async () => {
+    let withdraw = manager
+      .connect(unitap)
+      .withdrawErc20(token.address, tokenPeriodicMaxCap.add(1), user.address);
+    await expect(withdraw).to.be.reverted;
+  });
+  it("should allow unitap to withdraw below max cap in period", async () => {
+    let amount = BigNumber.from(10);
+    let balanceBefore = await token.balanceOf(user.address);
+    await manager
+      .connect(unitap)
+      .withdrawErc20(token.address, amount, user.address);
+
+    let balanceAfter = await token.balanceOf(user.address);
+    expect(balanceAfter.sub(balanceBefore)).eq(amount);
+  });
+  it("should allow to withdraw remaining amount", async () => {
+    let amount = BigNumber.from(10);
+
+    await manager
+      .connect(unitap)
+      .withdrawErc20(
+        token.address,
+        tokenPeriodicMaxCap.sub(amount),
+        user.address
+      );
+  });
+  it("should not allow to withdraw more", async () => {
+    let tx = manager
+      .connect(unitap)
+      .withdrawErc20(token.address, BigNumber.from(1), user.address);
+    await expect(tx).to.be.reverted;
+  });
+  it("should allow more withdraw in the next period", async () => {
+    await increaseTime(tokenPeriod.toNumber());
+    await manager
+      .connect(unitap)
+      .withdrawErc20(token.address, tokenPeriodicMaxCap, user.address);
+  });
+  it("should allow admin to withdraw all erc20 balance", async () => {
+    let beforeBalance = await token.balanceOf(emergencyUser.address);
+    let totalBalance = await token.balanceOf(manager.address);
+    await manager
+      .connect(admin)
+      .withdrawErc20(token.address, totalBalance, emergencyUser.address);
+    let afterBalance = await token.balanceOf(emergencyUser.address);
+    expect(afterBalance.sub(beforeBalance)).eq(totalBalance);
   });
 });
