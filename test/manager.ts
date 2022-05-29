@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { ethers } from "hardhat";
 import { deployManager } from "../scripts/deployHelpers";
-import { Manager } from "../typechain";
+import { ERC20, Manager } from "../typechain";
 import { increaseTime } from "./timeUtils";
 
 let week = 86400 * 7;
@@ -11,6 +11,7 @@ let tenTokens = ethers.utils.parseEther("10");
 
 describe("Manager", async () => {
   let manager: Manager;
+  let token: ERC20;
   let period: BigNumber = BigNumber.from(week);
   let periodicMaxCap: BigNumber = tenTokens;
   let admin: SignerWithAddress;
@@ -32,6 +33,10 @@ describe("Manager", async () => {
       value: ethers.utils.parseEther("50"),
       to: manager.address,
     });
+
+    let tokenFactory = await ethers.getContractFactory("TestToken");
+    token = await tokenFactory.deploy();
+    await token.deployed();
   });
   it("initial params should be correct", async () => {
     let period_ = await manager.period();
@@ -80,7 +85,10 @@ describe("Manager", async () => {
   it("it should not allow non-admin role to emergency withdraw", async () => {
     let withdraw = manager
       .connect(user)
-      .emergencyWithdraw(ethers.utils.parseEther("5"), emergencyUser.address);
+      .emergencyWithdrawETH(
+        ethers.utils.parseEther("5"),
+        emergencyUser.address
+      );
 
     await expect(withdraw).to.be.reverted;
   });
@@ -89,8 +97,16 @@ describe("Manager", async () => {
     let amount = ethers.utils.parseEther("5");
     await manager
       .connect(admin)
-      .emergencyWithdraw(amount, emergencyUser.address);
+      .emergencyWithdrawETH(amount, emergencyUser.address);
     let afterBalance = await emergencyUser.getBalance();
     expect(afterBalance.sub(beforeBalance)).eq(amount);
+  });
+  it("should get erc20 period and max periodic cap", async () => {
+    let tokenPeriod = await manager.erc20Periods(token.address);
+    let tokenPeriodicMaxCap = await manager.erc20PeriodicMaxCap(token.address);
+    let tokenWithrdrawals = await manager.erc20Withdrawals(token.address);
+    expect(tokenPeriod).eq(0);
+    expect(tokenWithrdrawals).eq(0);
+    expect(tokenPeriodicMaxCap).eq(0);
   });
 });

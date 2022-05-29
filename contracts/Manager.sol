@@ -3,13 +3,16 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract Manager is AccessControl {
     uint256 public period;
     uint256 public periodicMaxCap;
-
     mapping(uint256 => uint256) public totalWithdrawals; // period => amount
 
+    mapping(address => uint256) public erc20Periods; // erc20 token => period
+    mapping(address => uint256) public erc20PeriodicMaxCap; // erc20 token =>  erc20 periodic max cap
+    mapping(address => uint256) public erc20Withdrawals; // erc20 token => period withrawals
     bytes32 public constant UNITAP_ROLE = keccak256("UNITAP_ROLE");
 
     constructor(
@@ -52,7 +55,7 @@ contract Manager is AccessControl {
         periodicMaxCap = periodicMaxCap_;
     }
 
-    function emergencyWithdraw(uint256 amount, address to)
+    function emergencyWithdrawETH(uint256 amount, address to)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
