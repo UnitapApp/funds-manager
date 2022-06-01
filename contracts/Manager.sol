@@ -41,17 +41,18 @@ contract Manager is AccessControl {
         _;
     }
 
-    function getActivePeriod() public view returns (uint256) {
-        return (block.timestamp / period) * period;
+    function getActivePeriod(uint256 period_) public view returns (uint256) {
+        return (block.timestamp / period_) * period_;
     }
 
     function _checkAndUpdateMaxCap(uint256 amount) internal {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             require(
-                totalWithdrawals[getActivePeriod()] + amount <= periodicMaxCap,
+                totalWithdrawals[getActivePeriod(period)] + amount <=
+                    periodicMaxCap,
                 "Manager: PERIODIC_MAX_CAP_EXCEEDED"
             );
-            totalWithdrawals[getActivePeriod()] += amount;
+            totalWithdrawals[getActivePeriod(period)] += amount;
         }
     }
 
@@ -60,11 +61,14 @@ contract Manager is AccessControl {
     {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             require(
-                erc20Withdrawals[token][getActivePeriod()] + amount <=
+                erc20Withdrawals[token][getActivePeriod(erc20Periods[token])] +
+                    amount <=
                     erc20PeriodicMaxCap[token],
                 "Manager: PERIODIC_MAX_CAP_EXCEEDED"
             );
-            erc20Withdrawals[token][getActivePeriod()] += amount;
+            erc20Withdrawals[token][
+                getActivePeriod(erc20Periods[token])
+            ] += amount;
         }
     }
 
