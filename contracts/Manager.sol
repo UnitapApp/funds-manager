@@ -72,7 +72,10 @@ contract Manager is AccessControl {
         }
     }
 
-    function withdraw(uint256 amount, address to) external onlyUnitapOrAdmin {
+    function withdrawEth(uint256 amount, address to)
+        external
+        onlyUnitapOrAdmin
+    {
         // allow DEFALUT_ADMIN to withdraw as much as he wants
         _checkAndUpdateEthMaxCap(amount);
         payable(to).transfer(amount);

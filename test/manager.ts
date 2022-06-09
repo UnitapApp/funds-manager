@@ -69,39 +69,39 @@ describe("Manager", async () => {
   it("should not allow non-unitap roles to withdraw funds", async () => {
     let withdraw = manager
       .connect(user)
-      .withdraw(ethers.utils.parseEther("1"), user.address);
+      .withdrawEth(ethers.utils.parseEther("1"), user.address);
     await expect(withdraw).to.be.reverted;
   });
   it("should allow unitap to withdraw funds if less than max cap", async () => {
     let amount = ethers.utils.parseEther("1");
     let userBalanceBefore = await user.getBalance();
-    await manager.connect(unitap).withdraw(amount, user.address);
+    await manager.connect(unitap).withdrawEth(amount, user.address);
     let userBalanceAfter = await user.getBalance();
     expect(userBalanceAfter.sub(userBalanceBefore)).eq(amount);
   });
   it("should not allow unitap to withdraw more than periodicMaxCap in each period", async () => {
     let withdraw = manager
       .connect(unitap)
-      .withdraw(periodicMaxCap, user.address);
+      .withdrawEth(periodicMaxCap, user.address);
     await expect(withdraw).to.be.revertedWith(
       "Manager: PERIODIC_MAX_CAP_EXCEEDED"
     );
   });
   it("should allow unitap to withdraw funds in the next period", async () => {
     await increaseTime(period.toNumber());
-    await manager.connect(unitap).withdraw(periodicMaxCap, user.address);
+    await manager.connect(unitap).withdrawEth(periodicMaxCap, user.address);
   });
   it("it should not allow non-admin role to emergency withdraw", async () => {
     let withdraw = manager
       .connect(user)
-      .withdraw(fiveTokens, emergencyUser.address);
+      .withdrawEth(fiveTokens, emergencyUser.address);
 
     await expect(withdraw).to.be.reverted;
   });
   it("should withdraw funds if admin role", async () => {
     let beforeBalance = await emergencyUser.getBalance();
     let amount = ethers.utils.parseEther("5");
-    await manager.connect(admin).withdraw(amount, emergencyUser.address);
+    await manager.connect(admin).withdrawEth(amount, emergencyUser.address);
     let afterBalance = await emergencyUser.getBalance();
     expect(afterBalance.sub(beforeBalance)).eq(amount);
   });
