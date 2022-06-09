@@ -5,8 +5,20 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+struct EthRecipient {
+    address to;
+    uint256 amount;
+}
+
+struct Erc20Recipient {
+    address token;
+    uint256 to;
+    uint256 amount;
+}
+
 contract Manager is AccessControl {
     using SafeERC20 for IERC20;
+
     uint256 public ethPeriod; // native asset (eth) period
     uint256 public ethPeriodicMaxCap; // native asset periodic cap
     mapping(uint256 => uint256) public ethTotalWithdrawals; // period => amount
@@ -72,13 +84,18 @@ contract Manager is AccessControl {
         }
     }
 
-    function withdrawEth(uint256 amount, address to)
-        external
-        onlyUnitapOrAdmin
-    {
+    function withdrawEth(uint256 amount, address to) public onlyUnitapOrAdmin {
         // allow DEFALUT_ADMIN to withdraw as much as he wants
         _checkAndUpdateEthMaxCap(amount);
         payable(to).transfer(amount);
+    }
+
+    function multiWithdrawEth(EthRecipient[] memory recipients)
+        external
+        onlyRole(UNITAP_ROLE)
+    {
+        for (uint8 i = 0; i < recipients.length; i++)
+            withdrawEth(recipients[i].amount, recipients[i].to);
     }
 
     function withdrawErc20(

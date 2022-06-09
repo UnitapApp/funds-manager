@@ -24,9 +24,10 @@ describe("Manager", async () => {
   let unitap: SignerWithAddress;
   let user: SignerWithAddress;
   let emergencyUser: SignerWithAddress;
+  let user2: SignerWithAddress;
 
   before(async () => {
-    [admin, unitap, user, emergencyUser] = await ethers.getSigners();
+    [admin, unitap, user, emergencyUser, user2] = await ethers.getSigners();
     manager = await deployManager(
       BigNumber.from(86400), // one day
       ethers.utils.parseEther("1"), // one token;
@@ -90,6 +91,30 @@ describe("Manager", async () => {
   it("should allow unitap to withdraw funds in the next period", async () => {
     await increaseTime(period.toNumber());
     await manager.connect(unitap).withdrawEth(periodicMaxCap, user.address);
+  });
+  it("should not allow non-unitap user to call multiwithdraw eth", async () => {
+    let tx = manager.connect(user).multiWithdrawEth([
+      { to: user.address, amount: BigNumber.from(1) },
+      { to: user2.address, amount: BigNumber.from(2) },
+    ]);
+  });
+  it("should perform multi withdraw eth", async () => {
+    await increaseTime(period.toNumber());
+    let amountUser = ethers.utils.parseEther("0.001");
+    let amountUser2 = ethers.utils.parseEther("0.002");
+
+    let balanceBeforeUser1 = await user.getBalance();
+    let balanceBeforeUser2 = await user2.getBalance();
+
+    await manager.connect(unitap).multiWithdrawEth([
+      { to: user.address, amount: amountUser },
+      { to: user2.address, amount: amountUser2 },
+    ]);
+    let balanceAfterUser1 = await user.getBalance();
+    let balanceAfterUser2 = await user2.getBalance();
+
+    expect(balanceAfterUser1.sub(balanceBeforeUser1)).eq(amountUser);
+    expect(balanceAfterUser2.sub(balanceBeforeUser2)).eq(amountUser2);
   });
   it("it should not allow non-admin role to emergency withdraw", async () => {
     let withdraw = manager
