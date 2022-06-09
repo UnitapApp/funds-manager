@@ -7,9 +7,9 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract Manager is AccessControl {
     using SafeERC20 for IERC20;
-    uint256 public period;
-    uint256 public periodicMaxCap;
-    mapping(uint256 => uint256) public totalWithdrawals; // period => amount
+    uint256 public ethPeriod; // native asset (eth) period
+    uint256 public ethPeriodicMaxCap; // native asset periodic cap
+    mapping(uint256 => uint256) public ethTotalWithdrawals; // period => amount
 
     mapping(address => uint256) public erc20Periods; // erc20 token => period
     mapping(address => uint256) public erc20PeriodicMaxCap; // erc20 token =>  erc20 periodic max cap
@@ -26,8 +26,8 @@ contract Manager is AccessControl {
             admin != address(0) && unitap != address(0),
             "Manager: ZERO_ADDRESS"
         );
-        period = period_;
-        periodicMaxCap = periodicMaxCap_;
+        ethPeriod = period_;
+        ethPeriodicMaxCap = periodicMaxCap_;
         _setupRole(DEFAULT_ADMIN_ROLE, admin);
         _setupRole(UNITAP_ROLE, unitap);
     }
@@ -45,14 +45,14 @@ contract Manager is AccessControl {
         return (block.timestamp / period_) * period_;
     }
 
-    function _checkAndUpdateMaxCap(uint256 amount) internal {
+    function _checkAndUpdateEthMaxCap(uint256 amount) internal {
         if (!hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             require(
-                totalWithdrawals[getActivePeriod(period)] + amount <=
-                    periodicMaxCap,
+                ethTotalWithdrawals[getActivePeriod(ethPeriod)] + amount <=
+                    ethPeriodicMaxCap,
                 "Manager: PERIODIC_MAX_CAP_EXCEEDED"
             );
-            totalWithdrawals[getActivePeriod(period)] += amount;
+            ethTotalWithdrawals[getActivePeriod(ethPeriod)] += amount;
         }
     }
 
@@ -74,7 +74,7 @@ contract Manager is AccessControl {
 
     function withdraw(uint256 amount, address to) external onlyUnitapOrAdmin {
         // allow DEFALUT_ADMIN to withdraw as much as he wants
-        _checkAndUpdateMaxCap(amount);
+        _checkAndUpdateEthMaxCap(amount);
         payable(to).transfer(amount);
     }
 
@@ -91,8 +91,8 @@ contract Manager is AccessControl {
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
-        period = period_;
-        periodicMaxCap = periodicMaxCap_;
+        ethPeriod = period_;
+        ethPeriodicMaxCap = periodicMaxCap_;
     }
 
     function setErc20Params(

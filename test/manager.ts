@@ -48,8 +48,8 @@ describe("Manager", async () => {
     await token.transfer(manager.address, ethers.utils.parseEther("100"));
   });
   it("initial params should be correct", async () => {
-    let period_ = await manager.period();
-    let periodicMaxCap_ = await manager.periodicMaxCap();
+    let period_ = await manager.ethPeriod();
+    let periodicMaxCap_ = await manager.ethPeriodicMaxCap();
     expect(BigNumber.from(86400)).eq(period_);
     expect(ethers.utils.parseEther("1")).eq(periodicMaxCap_);
   });
@@ -61,8 +61,8 @@ describe("Manager", async () => {
   });
   it("should allow admin to change params", async () => {
     await manager.setParams(period, periodicMaxCap);
-    let period_ = await manager.period();
-    let periodicMaxCap_ = await manager.periodicMaxCap();
+    let period_ = await manager.ethPeriod();
+    let periodicMaxCap_ = await manager.ethPeriodicMaxCap();
     expect(period).eq(period_);
     expect(periodicMaxCap).eq(periodicMaxCap_);
   });
