@@ -97,6 +97,7 @@ describe("Manager", async () => {
       { to: user.address, amount: BigNumber.from(1) },
       { to: user2.address, amount: BigNumber.from(2) },
     ]);
+    await expect(tx).to.be.reverted;
   });
   it("should perform multi withdraw eth", async () => {
     await increaseTime(period.toNumber());
@@ -199,6 +200,42 @@ describe("Manager", async () => {
       .connect(unitap)
       .withdrawErc20(token.address, tokenPeriodicMaxCap, user.address);
   });
+  it("should not allow non-unitap user to call multi withdraw erc20", async () => {
+    let tx = manager.multiWithdrawErc20([
+      { token: token.address, to: user.address, amount: 1 },
+      { token: token.address, to: user2.address, amount: 2 },
+    ]);
+    await expect(tx).to.be.reverted;
+  });
+
+  it("should perform multi withdraw eth", async () => {
+    await increaseTime(period.toNumber());
+    let amountUser = ethers.utils.parseEther("0.001");
+    let amountUser2 = ethers.utils.parseEther("0.002");
+
+    let balanceBeforeUser1 = await token.balanceOf(user.address);
+    let balanceBeforeUser2 = await token.balanceOf(user2.address);
+
+    await manager.connect(unitap).multiWithdrawErc20([
+      {
+        token: token.address,
+        to: user.address,
+        amount: amountUser,
+      },
+      {
+        token: token.address,
+        to: user2.address,
+        amount: amountUser2,
+      },
+    ]);
+
+    let balanceAfterUser1 = await token.balanceOf(user.address);
+    let balanceAfterUser2 = await token.balanceOf(user2.address);
+
+    expect(balanceAfterUser1.sub(balanceBeforeUser1)).eq(amountUser);
+    expect(balanceAfterUser2.sub(balanceBeforeUser2)).eq(amountUser2);
+  });
+
   it("should allow admin to withdraw all erc20 balance", async () => {
     let beforeBalance = await token.balanceOf(emergencyUser.address);
     let totalBalance = await token.balanceOf(manager.address);

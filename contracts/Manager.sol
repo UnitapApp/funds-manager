@@ -12,7 +12,7 @@ struct EthRecipient {
 
 struct Erc20Recipient {
     address token;
-    uint256 to;
+    address to;
     uint256 amount;
 }
 
@@ -102,9 +102,21 @@ contract Manager is AccessControl {
         address token,
         uint256 amount,
         address to
-    ) external onlyUnitapOrAdmin {
+    ) public onlyUnitapOrAdmin {
         _checkAndUpdateErc20MaxCap(token, amount);
         IERC20(token).safeTransfer(to, amount);
+    }
+
+    function multiWithdrawErc20(Erc20Recipient[] memory recipients)
+        external
+        onlyRole(UNITAP_ROLE)
+    {
+        for (uint8 i = 0; i < recipients.length; i++)
+            withdrawErc20(
+                recipients[i].token,
+                recipients[i].amount,
+                recipients[i].to
+            );
     }
 
     function setParams(uint256 period_, uint256 periodicMaxCap_)
