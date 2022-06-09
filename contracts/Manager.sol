@@ -119,7 +119,7 @@ contract Manager is AccessControl {
             );
     }
 
-    function setParams(uint256 period_, uint256 periodicMaxCap_)
+    function setEthParams(uint256 period_, uint256 periodicMaxCap_)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {

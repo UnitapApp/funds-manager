@@ -57,11 +57,11 @@ describe("Manager", async () => {
   it("should not allow non-admin user to change params", async () => {
     let change = manager
       .connect(unitap)
-      .setParams(period.add(10), periodicMaxCap.add(200));
+      .setEthParams(period.add(10), periodicMaxCap.add(200));
     await expect(change).to.be.reverted;
   });
   it("should allow admin to change params", async () => {
-    await manager.setParams(period, periodicMaxCap);
+    await manager.setEthParams(period, periodicMaxCap);
     let period_ = await manager.ethPeriod();
     let periodicMaxCap_ = await manager.ethPeriodicMaxCap();
     expect(period).eq(period_);
@@ -219,13 +219,13 @@ describe("Manager", async () => {
     await manager.connect(unitap).multiWithdrawErc20([
       {
         token: token.address,
-        to: user.address,
         amount: amountUser,
+        to: user.address,
       },
       {
         token: token.address,
-        to: user2.address,
         amount: amountUser2,
+        to: user2.address,
       },
     ]);
 
