@@ -32,6 +32,9 @@
     "typescript": "^4.7.2"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.6.0"
+    "@matterlabs/hardhat-zksync-deploy": "^0.5.2",
+    "@matterlabs/hardhat-zksync-solc": "^0.3.10",
+    "@openzeppelin/contracts": "^4.6.0",
+    "zksync-web3": "^0.11.1"
   }
 }

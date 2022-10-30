@@ -10,24 +10,24 @@ function sleep(time: number) {
 async function deploy() {
   let admin: SignerWithAddress;
   [admin] = await ethers.getSigners();
-  // let factory = await ethers.getContractFactory("Manager");
-  // console.log("Deploying manager...");
+  let factory = await ethers.getContractFactory("Manager");
+  console.log("Deploying manager...");
   let args = [
     BigNumber.from(86400), // one day
     ethers.utils.parseEther("1"), // 1 ether
     admin.address,
     admin.address,
   ];
-  // //@ts-ignore
-  // let manager = await factory.deploy(...args);
-  // await sleep(10000);
+  //@ts-ignore
+  let manager = await factory.deploy(...args);
+  console.log("Manager Deployed at ", manager.address);
+
+  await sleep(10000);
 
   await hre.run("verify:verify", {
-    address: "0x0E32D9b2423c0a9D4Ba789d6f55807EE2220B4Fc",
+    address: manager.address,
     constructorArguments: args,
   });
-
-  // console.log("Manager Deployed at ", manager.address);
 }
 
 deploy()
